@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloring-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloring-web
+  template:
+    metadata:
+      labels:
+        app: cloring-web
+    spec:
+      containers:
+        - name: cloring-web
+          image: cloring-web:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+            - name: db-data
+              mountPath: /app/data
+            - name: uploads-data
+              mountPath: /app/static/uploads
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: db-data-pvc
+        - name: uploads-data
+          persistentVolumeClaim:
+            claimName: uploads-data-pvc

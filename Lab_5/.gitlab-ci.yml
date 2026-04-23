@@ -1,0 +1,159 @@
+# Определение этапов пайплайна
+stages:
+  - test
+  - build
+  - deploy
+
+# Глобальные переменные окружения
+variables:
+  # Версия Python для тестирования
+  PYTHON_VERSION: "3.13"
+  # Имя Docker образа
+  IMAGE_NAME: $CI_REGISTRY_IMAGE
+  # Теги для образа
+  IMAGE_TAG_LATEST: $CI_REGISTRY_IMAGE:latest
+  IMAGE_TAG_COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+  # Docker настройки
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# ЭТАП 1: ТЕСТИРОВАНИЕ
+test:
+  stage: test
+  image: python:${PYTHON_VERSION}-slim
+  
+  before_script:
+    - echo "Установка зависимостей"
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install pytest-cov coverage
+    - echo "Зависимости установлены"
+  
+  script:
+    - echo "Запуск unit-тестов"
+    - python -m pytest tests/ -v --cov=src --cov-report=term --cov-report=xml:coverage.xml --cov-report=html:htmlcov --junitxml=report.xml
+    - echo "Тесты завершены"
+    - echo "Генерация отчета о покрытии"
+    - coverage report
+    - echo "Отчет о покрытии готов"
+  
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  
+  artifacts:
+    when: always
+    paths:
+      - htmlcov/
+      - coverage.xml
+      - report.xml
+    reports:
+      junit: report.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    expire_in: 30 days
+  
+  only:
+    - branches
+    - merge_requests
+
+# ЭТАП 2: СБОРКА DOCKER-ОБРАЗА
+build:
+  stage: build
+  image: docker:24-dind
+  
+  services:
+    - docker:24-dind
+  
+  needs:
+    - test
+  
+  before_script:
+    - echo "Настройка Docker"
+    - docker info
+    - echo "Docker готов к работе"
+  
+  script:
+    - echo "Сборка Docker образа"
+    - docker build 
+        --cache-from $IMAGE_TAG_LATEST
+        --build-arg BUILDKIT_INLINE_CACHE=1
+        --tag $IMAGE_NAME:build-$CI_COMMIT_SHORT_SHA
+        -f Dockerfile .
+    - echo "Образ собран"
+    - echo "Проверка работоспособности образа"
+    - docker run --rm -d --name test_container -p 5000:5000 $IMAGE_NAME:build-$CI_COMMIT_SHORT_SHA
+    - sleep 10
+    - docker ps | grep test_container
+    - docker logs test_container
+    - docker stop test_container
+    - echo "Образ работает корректно"
+    - echo "Сохранение образа"
+    - docker save $IMAGE_NAME:build-$CI_COMMIT_SHORT_SHA -o image.tar
+    - echo "Образ сохранен в артефакт"
+  
+  artifacts:
+    paths:
+      - image.tar
+    expire_in: 1 day
+  
+  cache:
+    key: docker-cache-$CI_COMMIT_REF_SLUG
+    paths:
+      - .docker-cache/
+  
+  only:
+    - branches
+    - tags
+    - merge_requests
+
+# ЭТАП 3: ПУБЛИКАЦИЯ В REGISTRY
+deploy:
+  stage: deploy
+  image: docker:24-dind
+  
+  services:
+    - docker:24-dind
+  
+  needs:
+    - build
+  
+  before_script:
+    - echo "Настройка Docker"
+    - docker info
+    - echo "Авторизация в GitLab Container Registry"
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - echo "Авторизация успешна"
+  
+  script:
+    - echo "Загрузка образа из артефакта"
+    - docker load -i image.tar
+    - echo "Образ загружен"
+    - echo "Тегирование образа"
+    - docker tag $IMAGE_NAME:build-$CI_COMMIT_SHORT_SHA $IMAGE_TAG_LATEST
+    - docker tag $IMAGE_NAME:build-$CI_COMMIT_SHORT_SHA $IMAGE_TAG_COMMIT
+    - echo "Образ тегирован latest и $CI_COMMIT_SHORT_SHA"
+    - echo "Публикация образа в Registry"
+    - docker push $IMAGE_TAG_LATEST
+    - docker push $IMAGE_TAG_COMMIT
+    - echo "Образ успешно опубликован"
+    - echo "Проверка опубликованного образа"
+    - docker rmi $IMAGE_TAG_LATEST || true
+    - docker pull $IMAGE_TAG_LATEST
+    - docker run --rm -d --name verify_container -p 5000:5000 $IMAGE_TAG_LATEST
+    - sleep 10
+    - docker ps | grep verify_container
+    - docker logs verify_container
+    - docker stop verify_container
+    - echo "Опубликованный образ работает корректно"
+  
+  after_script:
+    - echo "Очистка"
+    - docker logout $CI_REGISTRY
+    - echo "Деплой завершен"
+  
+  only:
+    - main
+    - master
+    - tags
+  
+  when: on_success
