@@ -8,6 +8,7 @@ from src.constants import VALIDATOR_FUNC
 import os
 import secrets
 from src.logger import (info_logger, er_logger)
+from prometheus_flask_exporter import PrometheusMetrics
 
 valid = Validator()
 aut = Autotentificator()
@@ -26,6 +27,10 @@ app.config['SECRET_KEY'] = os.environ.get(
     'SECRET_KEY', secrets.token_hex(16))
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['DATABASE_PATH'] = DATABASE_PATH
+
+# Prometheus metrics — эндпоинт /metrics доступен автоматически
+metrics = PrometheusMetrics(app)
+metrics.info('app_info', 'Cloring Web Application', version='1.0.0')
 
 base.create_users_table()
 base.create_table_users_items()
