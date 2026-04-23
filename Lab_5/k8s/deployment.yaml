@@ -18,6 +18,15 @@ spec:
           imagePullPolicy: Never
           ports:
             - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: cloring-config
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cloring-secret
+                  key: SECRET_KEY
           volumeMounts:
             - name: db-data
               mountPath: /app/data
