@@ -101,13 +101,13 @@ health:
 
 ## Показать статус всех ресурсов
 status:
-	@echo "── Pods ──────────────────────────────────────"
+	@echo "Pods"
 	kubectl get pods -n $(NAMESPACE) -o wide
-	@echo "── Services / Ingress ────────────────────────"
+	@echo "Services / Ingress"
 	kubectl get svc,ingress -n $(NAMESPACE)
-	@echo "── PVC ───────────────────────────────────────"
+	@echo "PVC"
 	kubectl get pvc -n $(NAMESPACE)
-	@echo "── HPA ───────────────────────────────────────"
+	@echo "HPA"
 	kubectl get hpa -n $(NAMESPACE) 2>/dev/null || true
 
 # Проброс портов
