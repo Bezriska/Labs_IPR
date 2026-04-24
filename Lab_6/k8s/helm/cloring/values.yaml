@@ -1,0 +1,47 @@
+# Базовые значения — переопределяются в values-dev.yaml / values-prod.yaml
+
+replicaCount: 1
+
+image:
+  repository: cloring-web
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 5000
+
+ingress:
+  enabled: true
+  host: cloring.local
+
+# DATABASE_URL задаётся через values-dev/prod.yaml и совпадает с контрактом infra/README.md
+database:
+  # имя Secret, созданного инфраструктурой (infra/helm/postgresql или infra/kustomize)
+  secretName: cloring-pg-secret
+  secretKey: DATABASE_URL
+
+app:
+  secretKey: "changeme"
+  uploadFolder: "/app/static/uploads"
+  flaskEnv: "production"
+  flaskDebug: "0"
+
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "256Mi"
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloring-postgresql
+spec:
+  selector:
+    app: cloring-postgresql
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 5432

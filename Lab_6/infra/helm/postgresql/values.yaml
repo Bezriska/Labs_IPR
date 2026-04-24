@@ -1,0 +1,23 @@
+## Базовые значения (переопределяются в values-dev.yaml / values-prod.yaml)
+
+postgresql:
+  image: postgres:15.3-alpine
+  user: cloring
+  password: changeme
+  database: cloring
+
+persistence:
+  enabled: true
+  storageClass: ""
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+service:
+  port: 5432

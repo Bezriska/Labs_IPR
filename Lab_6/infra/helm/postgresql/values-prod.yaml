@@ -1,0 +1,17 @@
+# values-prod.yaml — переопределения для окружения prod
+# ВНИМАНИЕ: postgresql.password НЕ задаётся здесь.
+# Передаётся через: --set postgresql.password="${POSTGRES_PASSWORD}"
+# или через внешний Secret (ExternalSecret / sealed-secrets).
+postgresql:
+  database: cloring_prod
+
+persistence:
+  size: 5Gi
+
+resources:
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"

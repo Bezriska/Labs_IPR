@@ -1,0 +1,44 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: prod
+
+bases:
+  - ../../base
+
+patches:
+  - patch: |-
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: cloring-pg-pvc
+      spec:
+        resources:
+          requests:
+            storage: 5Gi
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: cloring-postgresql
+      spec:
+        template:
+          spec:
+            containers:
+              - name: postgresql
+                resources:
+                  requests:
+                    cpu: "250m"
+                    memory: "256Mi"
+                  limits:
+                    cpu: "1000m"
+                    memory: "1Gi"
+
+# В prod пароль НЕ хранится в репозитории.
+# Создайте Secret вручную перед деплоем:
+#   kubectl create secret generic cloring-pg-secret \
+#     --from-literal=POSTGRES_USER=cloring \
+#     --from-literal=POSTGRES_PASSWORD=<STRONG_PASSWORD> \
+#     --from-literal=POSTGRES_DB=cloring_prod \
+#     --from-literal=DATABASE_URL="postgresql://cloring:<STRONG_PASSWORD>@cloring-postgresql:5432/cloring_prod" \
+#     -n prod

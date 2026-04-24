@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloring-config
+data:
+  UPLOAD_FOLDER: "/app/static/uploads"
+  FLASK_ENV: "production"
+  FLASK_DEBUG: "0"
+  # DATABASE_URL — НЕ здесь. Задаётся через overlay Secret (cloring-pg-secret).

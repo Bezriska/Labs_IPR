@@ -1,0 +1,33 @@
+# values-prod.yaml — переопределения для prod
+# app.secretKey НЕ задаётся здесь — передаётся через --set или внешний Secret.
+replicaCount: 2
+
+image:
+  tag: prod
+  pullPolicy: Always
+
+database:
+  secretName: cloring-pg-secret   # создан infra при деплое в namespace prod
+  secretKey: DATABASE_URL
+  # DATABASE_URL = postgresql://cloring:<STRONG_PASSWORD>@cloring-postgresql:5432/cloring_prod
+
+app:
+  flaskEnv: "production"
+  flaskDebug: "0"
+
+persistence:
+  size: 5Gi
+
+resources:
+  requests:
+    cpu: "200m"
+    memory: "256Mi"
+  limits:
+    cpu: "1000m"
+    memory: "512Mi"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70

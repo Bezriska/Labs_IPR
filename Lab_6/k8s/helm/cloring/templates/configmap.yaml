@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  UPLOAD_FOLDER: {{ .Values.app.uploadFolder | quote }}
+  FLASK_ENV: {{ .Values.app.flaskEnv | quote }}
+  FLASK_DEBUG: {{ .Values.app.flaskDebug | quote }}
+  # DATABASE_URL — НЕ здесь. Задаётся через Secret (cloring-pg-secret из infra).

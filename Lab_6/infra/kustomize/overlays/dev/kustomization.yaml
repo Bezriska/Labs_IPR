@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: dev
+
+bases:
+  - ../../base
+
+namePrefix: ""
+
+patches:
+  - patch: |-
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: cloring-pg-pvc
+      spec:
+        resources:
+          requests:
+            storage: 1Gi
+
+secretGenerator:
+  - name: cloring-pg-secret
+    behavior: replace
+    literals:
+      - POSTGRES_USER=cloring
+      - POSTGRES_PASSWORD=devpassword
+      - POSTGRES_DB=cloring_dev
+      - DATABASE_URL=postgresql://cloring:devpassword@cloring-postgresql:5432/cloring_dev

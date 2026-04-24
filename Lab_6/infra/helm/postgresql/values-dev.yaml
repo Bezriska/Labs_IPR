@@ -1,0 +1,15 @@
+# values-dev.yaml — переопределения для окружения dev
+postgresql:
+  password: devpassword
+  database: cloring_dev
+
+persistence:
+  size: 1Gi
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "250m"
+    memory: "256Mi"

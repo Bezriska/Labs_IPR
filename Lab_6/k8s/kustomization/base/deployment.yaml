@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloring-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloring-web
+  template:
+    metadata:
+      labels:
+        app: cloring-web
+    spec:
+      containers:
+        - name: cloring-web
+          image: cloring-web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: cloring-config
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cloring-secret
+                  key: SECRET_KEY
+            # DATABASE_URL берётся из Secret, созданного инфраструктурой (cloring-pg-secret)
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cloring-pg-secret
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          volumeMounts:
+            - name: uploads-data
+              mountPath: /app/static/uploads
+      volumes:
+        - name: uploads-data
+          persistentVolumeClaim:
+            claimName: uploads-data-pvc

@@ -1,0 +1,22 @@
+# values-dev.yaml — переопределения для dev
+replicaCount: 1
+
+image:
+  tag: dev
+  pullPolicy: Never   # minikube / kind: образ загружен локально
+
+database:
+  secretName: cloring-pg-secret   # создан infra при деплое в namespace dev
+  secretKey: DATABASE_URL
+  # DATABASE_URL = postgresql://cloring:devpassword@cloring-postgresql:5432/cloring_dev
+
+app:
+  secretKey: "dev-insecure-secret-key-change-in-prod"
+  flaskEnv: "development"
+  flaskDebug: "1"
+
+persistence:
+  size: 1Gi
+
+autoscaling:
+  enabled: false
